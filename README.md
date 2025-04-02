@@ -47,7 +47,7 @@ The full citation is
 GPU with at least 25GB GPU Memory, 11 TFLOPS.
 Works properly on this image: https://hub.docker.com/r/cheyam/template3
 ## Environment setup
-Install conda with python=3.11 and activate
+Create and activate a conda environment with python=3.11.
 ## Installation
 ```bash
 git clone https://github.com/K1ta141k/QuaRot.git
