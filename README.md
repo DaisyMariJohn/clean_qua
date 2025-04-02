@@ -41,3 +41,17 @@ The full citation is
   year={2024}
 }
 ```
+
+## My additions
+## Requirements
+GPU with at least 25GB GPU Memory, 11 TFLOPS.
+Works properly on this image: https://hub.docker.com/r/cheyam/template3
+## Environment setup
+Install conda with python=3.11 and activate
+## Installation
+```bash
+git clone https://github.com/K1ta141k/QuaRot.git
+cd QuaRot
+pip install -r requirements.txt
+pip install -e .  # or pip install .
+```
