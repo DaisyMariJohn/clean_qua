@@ -80,6 +80,15 @@ def main():
 
 
     # RUN SKEW ANALYSIS
+
+     #REPEATED TRAIN LOADER FOR TESTING FOT THE SKEW ANALYSIS CODE HERE: 
+
+    trainloader = data_utils.get_loaders(
+        args.cal_dataset, nsamples=args.nsamples,
+        seed=args.seed, model=args.model,
+        seqlen=model.seqlen, eval_mode=False
+    )
+
     # Target only certain layers but list can be adjusted
     target_layers = ["down_proj", "o_proj", "v_proj"]
     skew_stats = analyze_skew(model, trainloader, target_layer_names=target_layers, device=utils.DEV)
