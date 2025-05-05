@@ -1,4 +1,6 @@
 import subprocess
+import csv
+from datetime import datetime
 
 # Base command to run the model with default settings
 BASE_CMD = [
@@ -15,29 +17,41 @@ BASE_CMD = [
 
 # Different configurations to test
 configs = {
-    "baseline_fp16": BASE_CMD[:-9] + ["--a_bits", "16"],  # No quantization on activations
-    "symmetric": BASE_CMD + ["--no-a_asym"],              # Force symmetric quantization
-    "asymmetric": BASE_CMD + ["--a_asym"],                # Force asymmetric quantization
-    "auto_asym": BASE_CMD + ["--a_auto_asym"]             # Dynamically decide using skew
+    "baseline_fp16": BASE_CMD[:-9] + ["--a_bits", "16"],
+    "symmetric": BASE_CMD + ["--no-a_asym"],
+    "asymmetric": BASE_CMD + ["--a_asym"],
+    "auto_asym": BASE_CMD + ["--a_auto_asym"]
 }
 
-results = {}
+results = []
 
 # Run each configuration and collect output
 for name, cmd in configs.items():
-    print(f"\n Running: {name}")
+    print(f"\nRunning: {name}")
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     output = []
 
+    perplexity = "N/A"
     for line in proc.stdout:
         print(line.strip())
         output.append(line.strip())
 
-        # Look for perplexity result in output
+        # Extract perplexity value from the output
         if "Perplexity" in line or "ppl/" in line:
-            results[name] = line.strip()
+            perplexity = line.strip()
 
-# Summary of results
-print("\n Final Perplexity Results:")
-for name, result in results.items():
-    print(f"{name}: {result}")
+    # Append result to list
+    results.append({
+        "config": name,
+        "perplexity_output": perplexity,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+# Write results to a CSV file
+csv_filename = "quantization_results.csv"
+with open(csv_filename, mode="w", newline="") as file:
+    writer = csv.DictWriter(file, fieldnames=["config", "perplexity_output", "timestamp"])
+    writer.writeheader()
+    writer.writerows(results)
+
+print(f"\n Results written to: {csv_filename}")

@@ -9,7 +9,6 @@ import gptq_utils
 import eval_utils
 import hadamard_utils
 
-
 from skew_utils import analyze_skew, decide_quant_mode, determine_layer_symmetry
 
 def main():
@@ -22,8 +21,14 @@ def main():
     transformers.set_seed(args.seed)
     model = model_utils.get_model(args.model, args.hf_token)
     model.eval()
-    
-    
+
+    trainloader = data_utils.get_loaders(
+        args.cal_dataset, nsamples=args.nsamples,
+        seed=args.seed, model=args.model,
+        seqlen=model.seqlen, eval_mode=False
+    )
+
+
     # Rotate the weights
     if args.rotate:
         rotation_utils.fuse_layer_norms(model)
@@ -48,46 +53,52 @@ def main():
                 qlayers[name].fp32_had = args.fp32_had
     else:
         quant_utils.add_actquant(model) #Add Activation Wrapper to the model as the rest of the code assumes it is present
-        
-                
-    # if args.w_bits < 16:
-    #     save_dict = {}
-    #     if args.load_qmodel_path: # Load Quantized Rotated Model
-    #         assert args.rotate, "Model should be rotated to load a quantized model!"
-    #         assert not args.save_qmodel_path, "Cannot save a quantized model if it is already loaded!"
-    #         print("Load quantized model from ", args.load_qmodel_path)
-    #         save_dict = torch.load(args.load_qmodel_path)
-    #         model.load_state_dict(save_dict["model"])
-            
-    #     elif not args.w_rtn: # GPTQ Weight Quantization
-    #         assert "llama" in args.model, "Only llama is supported for GPTQ!"
-            
-    #         trainloader = data_utils.get_loaders(
-    #             args.cal_dataset, nsamples=args.nsamples,
-    #             seed=args.seed, model=args.model,
-    #             seqlen=model.seqlen, eval_mode=False
-    #         )
-    #         quantizers = gptq_utils.gptq_fwrd(model, trainloader, utils.DEV, args)
-    #         save_dict["w_quantizers"] = quantizers
-    #     else: # RTN Weight Quantization
-    #         quantizers = gptq_utils.rtn_fwrd(model, utils.DEV, args)
-    #         save_dict["w_quantizers"] = quantizers
-            
-    #     if args.save_qmodel_path:
-    #         save_dict["model"] = model.state_dict()
-    #         torch.save(save_dict, args.save_qmodel_path)
 
-
-
-    # RUN SKEW ANALYSIS
-
-     #REPEATED TRAIN LOADER FOR TESTING FOT THE SKEW ANALYSIS CODE HERE: 
 
     trainloader = data_utils.get_loaders(
         args.cal_dataset, nsamples=args.nsamples,
         seed=args.seed, model=args.model,
         seqlen=model.seqlen, eval_mode=False
     )
+        
+    # Quantization of the weights 
+    if args.w_bits < 16:
+        save_dict = {}
+        if args.load_qmodel_path: # Load Quantized Rotated Model
+            assert args.rotate, "Model should be rotated to load a quantized model!"
+            assert not args.save_qmodel_path, "Cannot save a quantized model if it is already loaded!"
+            print("Load quantized model from ", args.load_qmodel_path)
+            save_dict = torch.load(args.load_qmodel_path)
+            model.load_state_dict(save_dict["model"])
+            
+        elif not args.w_rtn: # GPTQ Weight Quantization
+            assert "llama" in args.model, "Only llama is supported for GPTQ!"
+            
+            # trainloader = data_utils.get_loaders(
+            #     args.cal_dataset, nsamples=args.nsamples,
+            #     seed=args.seed, model=args.model,
+            #     seqlen=model.seqlen, eval_mode=False
+            # )
+            quantizers = gptq_utils.gptq_fwrd(model, trainloader, utils.DEV, args)
+            save_dict["w_quantizers"] = quantizers
+        else: # RTN Weight Quantization
+            quantizers = gptq_utils.rtn_fwrd(model, utils.DEV, args)
+            save_dict["w_quantizers"] = quantizers
+            
+        if args.save_qmodel_path:
+            save_dict["model"] = model.state_dict()
+            torch.save(save_dict, args.save_qmodel_path)
+
+
+    # RUN SKEW ANALYSIS
+
+     #REPEATED TRAIN LOADER FOR TESTING FOT THE SKEW ANALYSIS CODE HERE: 
+
+    # trainloader = data_utils.get_loaders(
+    #     args.cal_dataset, nsamples=args.nsamples,
+    #     seed=args.seed, model=args.model,
+    #     seqlen=model.seqlen, eval_mode=False
+    # )
 
     # Target only certain layers but list can be adjusted
     target_layers = ["down_proj", "o_proj", "v_proj"]
@@ -99,7 +110,7 @@ def main():
         print(f"[Skew] {layer}: skew = {stats['skew']:.4f}, mean = {stats['mean']:.4f}")
 
 
-    # Add Input Quantization
+    # Activation Quantization
     if args.a_bits < 16 or args.v_bits < 16:
         qlayers = quant_utils.find_qlayers(model, layers=[quant_utils.ActQuantWrapper])
         down_proj_groupsize = -1
@@ -109,7 +120,13 @@ def main():
         for name in qlayers:            
             layer_input_bits = args.a_bits
             layer_groupsize = args.a_groupsize
-            layer_a_sym = not(args.a_asym)
+            #DACIA EDITED THIS PART 
+            if args.a_auto_asym:
+                # Automatic per-layer decision using skew
+                layer_a_sym = determine_layer_symmetry(name, args, skew_stats)
+            else:
+                # Respect global --a_asym or --no-a_asym
+                layer_a_sym = not args.a_asym
             layer_a_clip = args.a_clip_ratio
             
             if 'v_proj' in name and args.v_bits < 16: #Set the v_proj precision
@@ -172,7 +189,6 @@ def main():
         from lm_eval.models.huggingface import HFLM
 
         
-    
     if args.distribute:
         utils.distribute_model(model)
     else:
