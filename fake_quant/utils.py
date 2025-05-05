@@ -103,6 +103,8 @@ def parser_gen():
                         help='ASymmetric Activation quantization (default: False)')
     parser.add_argument('--a_clip_ratio', type=float, default=1.0,
         help='Clip ratio for activation quantization. new_max = max * clip_ratio')
+    parser.add_argument('--a_auto_asym', action=argparse.BooleanOptionalAction, default=False,
+    help='Automatically choose symmetric vs. asymmetric per layer based on skew/mean')
 
 
     # Weight Quantization Arguments
