@@ -71,42 +71,43 @@ def analyze_skew(model, calib_loader, target_layer_names, device="cuda"):
 
     return stats_store  # Return the collected statistics
 
-def decide_quant_mode(stats):
-    """
-    Decide whether to use symmetric or asymmetric quantization
-    based on skewness and mean/std ratio.
+# def decide_quant_mode(stats):
+#     """
+#     Decide whether to use symmetric or asymmetric quantization
+#     based on skewness and mean/std ratio.
 
-    Args:
-        stats (dict): Dictionary with 'mean', 'std', and 'skew' of a layer.
+#     Args:
+#         stats (dict): Dictionary with 'mean', 'std', and 'skew' of a layer.
 
-    Returns:
-        str: 'symmetric' or 'asymmetric'
-    """
+#     Returns:
+#         str: 'symmetric' or 'asymmetric'
+#     """
+#     mean = stats["mean"]
+#     std = stats["std"]
+#     skew = stats["skew"]
+
+#     # Heuristic thresholds (can be tuned)
+#     if abs(mean) / (std + 1e-6) > 0.5 or abs(skew) > 1.0:
+#         return "asymmetric"
+#     return "symmetric"
+
+def decide_quant_mode(stats, args):
     mean = stats["mean"]
     std = stats["std"]
     skew = stats["skew"]
 
-    # Heuristic thresholds (can be tuned)
-    if abs(mean) / (std + 1e-6) > 0.5 or abs(skew) > 1.0:
+    if abs(mean) / (std + 1e-6) > args.mean_std_thresh or abs(skew) > args.skew_thresh:
         return "asymmetric"
     return "symmetric"
-
+    
 def determine_layer_symmetry(layer_name, args, skew_stats):
-    """
-    Decide whether to use symmetric or asymmetric quantization for a given layer.
-
-    Args:
-        layer_name (str): Name of the layer.
-        args (Namespace): Parsed command-line arguments.
-        skew_stats (dict): Dictionary of skew statistics from analyze_skew().
-
-    Returns:
-        bool: True for symmetric quantization, False for asymmetric.
-    """
     if args.a_auto_asym and layer_name in skew_stats:
-        mode = decide_quant_mode(skew_stats[layer_name])
+        mode = decide_quant_mode(
+            skew_stats[layer_name], 
+            mean_std_thresh=args.mean_std_thresh,
+            skew_thresh=args.skew_thresh
+        )
         print(f"[Auto Quant Mode] {layer_name}: skew = {skew_stats[layer_name]['skew']:.3f} → using {mode}")
         return (mode == "symmetric")
     else:
         return not args.a_asym
-

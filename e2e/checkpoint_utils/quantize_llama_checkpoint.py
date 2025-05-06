@@ -90,7 +90,7 @@ if __name__ == "__main__":
         'meta-llama/Llama-2-70b-hf',
     ]
 
-    supported_datasets = ['wikitext2', 'ptb', 'c4']
+    supported_datasets = ['wikitext2', 'ptb', 'c4', 'wikitext103', 'pile']
 
     # General Arguments
     parser.add_argument('--pretraiend_path_or_name', type=str, default='meta-llama/Llama-2-7b-hf',
