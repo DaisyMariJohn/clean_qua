@@ -194,7 +194,7 @@ def main():
 
                 if args.k_bits < 16:
                             # Use skew-based decision if enabled
-                    if args.k_auto_asym:
+                    if args.a_auto_asym:
                         k_sym = determine_layer_symmetry("k_proj", skew_stats, mean_std_thresh, skew_thresh)
                     else:
                         k_sym = not args.k_asym
