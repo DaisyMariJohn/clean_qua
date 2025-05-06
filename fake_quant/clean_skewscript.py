@@ -1,57 +1,53 @@
 import subprocess
-import csv
+import re
 from datetime import datetime
 
 # Base command to run the model with default settings
 BASE_CMD = [
     "python", "main.py",
     "--model", "meta-llama/Llama-2-7b-hf",
-    "--rotate",
-    "--a_bits", "4",
     "--v_bits", "4",
     "--k_bits", "4",
-    "--w_bits", "4",
+    # "--w_bits", "4",
     "--w_clip",
-    "--eval_dataset", "wikitext2"
+    "--eval_dataset", "wikitext2",
+    "--a_auto_asym"  # enable auto-asym
 ]
 
-# Different configurations to test
-configs = {
-    "baseline_fp16": BASE_CMD[:-9] + ["--a_bits", "16"],
-    "symmetric": BASE_CMD + ["--no-a_asym"],
-    "asymmetric": BASE_CMD + ["--a_asym"],
-    "auto_asym": BASE_CMD + ["--a_auto_asym"]
-}
+# Sweep over a broader range of threshold values
+mean_std_range = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1]
+skew_range = [0.2, 0.5, 1.0, 1.5, 2.0, 3.0]
 
 results = []
 
-# Run each configuration and collect output
-for name, cmd in configs.items():
-    print(f"\nRunning: {name}")
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    output = []
+for mean_thresh in mean_std_range:
+    for skew_thresh in skew_range:
+        print(f"\n🔹 Testing mean/std={mean_thresh}, skew={skew_thresh}")
+        
+        cmd = BASE_CMD + [
+            f"--mean_std_thresh={mean_thresh}",
+            f"--skew_thresh={skew_thresh}"
+        ]
 
-    perplexity = "N/A"
-    for line in proc.stdout:
-        print(line.strip())
-        output.append(line.strip())
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        output = []
+        perplexity = "N/A"
 
-        # Extract perplexity value from the output
-        if "Perplexity" in line or "ppl/" in line:
-            perplexity = line.strip()
+        for line in proc.stdout:
+            print(line.strip())
+            output.append(line.strip())
+            match = re.search(r"WIKITEXT2 PPL:\s*([0-9.]+)", line)
+            if match:
+                perplexity = float(match.group(1))
 
-    # Append result to list
-    results.append({
-        "config": name,
-        "perplexity_output": perplexity,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    })
+        results.append({
+            "mean_std_thresh": mean_thresh,
+            "skew_thresh": skew_thresh,
+            "perplexity": perplexity,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
 
-# Write results to a CSV file
-csv_filename = "quantization_results.csv"
-with open(csv_filename, mode="w", newline="") as file:
-    writer = csv.DictWriter(file, fieldnames=["config", "perplexity_output", "timestamp"])
-    writer.writeheader()
-    writer.writerows(results)
-
-print(f"\n Results written to: {csv_filename}")
+# Summary
+print("\n📊 Threshold Sweep Results:")
+for r in results:
+    print(f"{r['timestamp']} | mean/std={r['mean_std_thresh']} | skew={r['skew_thresh']} → PPL: {r['perplexity']}")
