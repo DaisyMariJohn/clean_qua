@@ -32,6 +32,12 @@ def main():
                 model = model_utils.get_model(args.model, args.hf_token)
                 model.eval()
 
+                trainloader = data_utils.get_loaders(
+                    args.cal_dataset, nsamples=args.nsamples,
+                    seed=args.seed, model=args.model,
+                    seqlen=model.seqlen, eval_mode=False
+                )
+
 
                 # # Rotate the weights
                 # if args.rotate:
