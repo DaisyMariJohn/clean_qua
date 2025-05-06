@@ -19,7 +19,7 @@ supported_models = [
             'meta-llama/Meta-Llama-3-70B',
             'facebook/opt-125m'
             ]
-supported_datasets = ['wikitext2', 'ptb', 'c4']
+supported_datasets = ['wikitext2', 'ptb', 'c4', 'wikitext103', 'pile']
 
 # These flags disable using TensorFloat-32 tensor cores (to avoid numerical issues)
 torch.backends.cuda.matmul.allow_tf32 = False
@@ -105,6 +105,9 @@ def parser_gen():
         help='Clip ratio for activation quantization. new_max = max * clip_ratio')
     parser.add_argument('--a_auto_asym', action=argparse.BooleanOptionalAction, default=False,
     help='Automatically choose symmetric vs. asymmetric per layer based on skew/mean')
+    parser.add_argument('--mean_std_thresh', type=float, default=0.5)
+    parser.add_argument('--skew_thresh', type=float, default=1.0)
+
 
 
     # Weight Quantization Arguments
