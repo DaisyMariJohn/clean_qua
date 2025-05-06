@@ -1,6 +1,7 @@
 import subprocess
 import re
 from datetime import datetime
+import csv
 
 # Base command to run the model with default settings
 BASE_CMD = [
@@ -48,6 +49,14 @@ for mean_thresh in mean_std_range:
         })
 
 # Summary
-print("\n📊 Threshold Sweep Results:")
+print("\n Threshold Sweep Results:")
 for r in results:
     print(f"{r['timestamp']} | mean/std={r['mean_std_thresh']} | skew={r['skew_thresh']} → PPL: {r['perplexity']}")
+
+
+with open("threshold_sweep_results.csv", "w", newline="") as csvfile:
+    fieldnames = ["timestamp", "mean_std_thresh", "skew_thresh", "perplexity"]
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    for r in results:
+        writer.writerow(r)
