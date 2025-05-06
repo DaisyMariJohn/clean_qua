@@ -91,23 +91,20 @@ def analyze_skew(model, calib_loader, target_layer_names, device="cuda"):
 #         return "asymmetric"
 #     return "symmetric"
 
-def decide_quant_mode(stats, args):
+def decide_quant_mode(stats, mean_std_thresh, skew_thresh):
     mean = stats["mean"]
     std = stats["std"]
     skew = stats["skew"]
 
-    if abs(mean) / (std + 1e-6) > args.mean_std_thresh or abs(skew) > args.skew_thresh:
+    if abs(mean) / (std + 1e-6) > mean_std_thresh or abs(skew) > skew_thresh:
         return "asymmetric"
     return "symmetric"
     
-def determine_layer_symmetry(layer_name, args, skew_stats):
-    if args.a_auto_asym and layer_name in skew_stats:
-        mode = decide_quant_mode(
-            skew_stats[layer_name], 
-            mean_std_thresh=args.mean_std_thresh,
-            skew_thresh=args.skew_thresh
-        )
+def determine_layer_symmetry(layer_name, skew_stats, mean_std_thresh, skew_thresh):
+    if layer_name in skew_stats:
+        mode = decide_quant_mode(skew_stats[layer_name], mean_std_thresh, skew_thresh)
         print(f"[Auto Quant Mode] {layer_name}: skew = {skew_stats[layer_name]['skew']:.3f} → using {mode}")
         return (mode == "symmetric")
     else:
-        return not args.a_asym
+        return True  # default to symmetric
+
