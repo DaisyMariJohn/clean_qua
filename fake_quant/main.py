@@ -13,7 +13,8 @@ from skew_utils import analyze_skew, decide_quant_mode, determine_layer_symmetry
 
 
 
-def main(mean_thresh, skew_thresh):
+def main(mean_std_thresh, skew_thresh):
+
                 args = utils.parser_gen()
                 if args.wandb:
                     import wandb
@@ -57,11 +58,6 @@ def main(mean_thresh, skew_thresh):
                 #     quant_utils.add_actquant(model) #Add Activation Wrapper to the model as the rest of the code assumes it is present
 
 
-                # trainloader = data_utils.get_loaders(
-                #     args.cal_dataset, nsamples=args.nsamples,
-                #     seed=args.seed, model=args.model,
-                #     seqlen=model.seqlen, eval_mode=False
-                # )
                     
                 # # Quantization of the weights 
                 # if args.w_bits < 16:
@@ -94,55 +90,10 @@ def main(mean_thresh, skew_thresh):
 
                 # RUN SKEW ANALYSIS
 
-                #REPEATED TRAIN LOADER FOR TESTING FOT THE SKEW ANALYSIS CODE HERE: 
-
-                # trainloader = data_utils.get_loaders(
-                #     args.cal_dataset, nsamples=args.nsamples,
-                #     seed=args.seed, model=args.model,
-                #     seqlen=model.seqlen, eval_mode=False
-                # )
 
                 # Target only certain layers but list can be adjusted
                 target_layers = ["down_proj", "o_proj", "v_proj", "k_proj", "q_proj", "up_proj","gate_proj"]
                 skew_stats = analyze_skew(model, trainloader, target_layer_names=target_layers, device=utils.DEV)
-
-                # #  LOG THE RESULTS OR ACT ON THEM
-                # # Print results
-                # for layer, stats in skew_stats.items():
-                #     print(f"[Skew] {layer}: skew = {stats['skew']:.4f}, mean = {stats['mean']:.4f}")
-
-                # # Sweep over a broader range of threshold values
-                # mean_std_range = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1]
-                # skew_range = [0.2, 0.5, 1.0, 1.5, 2.0, 3.0]
-
-                # # set this up to collect things 
-                # results = []
-
-                # for mean_thresh in mean_std_range:
-                #     for skew_thresh in skew_range:
-                #         print(f"\nTesting mean/std = {mean_thresh}, skew = {skew_thresh}")
-                        
-                #         try:
-                #             # Call your main evaluation logic here, passing thresholds directly
-                #             perplexity = run_quant_pipeline(mean_thresh, skew_thresh)
-
-                #         except Exception as e:
-                #             print(f"Error during run: {e}")
-                #             perplexity = "Error"
-
-                #         results.append({
-                #             "mean_std_thresh": mean_thresh,
-                #             "skew_thresh": skew_thresh,
-                #             "perplexity": perplexity,
-                #             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                #         })
-                
-                # Sweep over a broader range of threshold values
-                # mean_std_range = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1]
-                # skew_range = [0.2, 0.5, 1.0, 1.5, 2.0, 3.0]
-
-                mean_std_thresh = 0.1
-                skew_thresh = 0.2
 
 
                 # Activation Quantization
@@ -155,7 +106,7 @@ def main(mean_thresh, skew_thresh):
                     for name in qlayers:            
                         layer_input_bits = args.a_bits
                         layer_groupsize = args.a_groupsize
-                        #DACIA EDITED THIS PART 
+                        #Added this Part  
                         if args.a_auto_asym:
                             # Automatic per-layer decision using skew
                             layer_a_sym = determine_layer_symmetry(name, skew_stats, mean_std_thresh, skew_thresh)
