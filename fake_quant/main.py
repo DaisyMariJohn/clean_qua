@@ -200,10 +200,9 @@ def main(mean_std_thresh, skew_thresh):
 # if __name__ == '__main__':
 #     main()
 if __name__ == '__main__':
-    mean_std_range = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1]
-    skew_range = [0.2, 0.5, 1.0, 1.5, 2.0, 3.0]
+    # mean_std_range = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1]
+    # skew_range = [0.2, 0.5, 1.0, 1.5, 2.0, 3.0]
+    mean_thresh = [0.1]
+    skew_thresh = [0.2]
 
-    for mean_thresh in mean_std_range:
-        for skew_thresh in skew_range:
-            print(f"\nTesting mean/std = {mean_thresh}, skew = {skew_thresh}")
-            main(mean_thresh, skew_thresh)
+    main(mean_thresh, skew_thresh)
