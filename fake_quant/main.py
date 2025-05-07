@@ -11,8 +11,6 @@ import hadamard_utils
 
 from skew_utils import analyze_skew, decide_quant_mode, determine_layer_symmetry
 
-
-
 def main(mean_std_thresh, skew_thresh):
 
                 args = utils.parser_gen()
@@ -202,7 +200,7 @@ def main(mean_std_thresh, skew_thresh):
 if __name__ == '__main__':
     # mean_std_range = [0.1, 0.3, 0.5, 0.7, 0.9, 1.1]
     # skew_range = [0.2, 0.5, 1.0, 1.5, 2.0, 3.0]
-    mean_thresh = [0.1]
-    skew_thresh = [0.2]
+    mean_thresh = 0.1
+    skew_thresh = 0.2
 
     main(mean_thresh, skew_thresh)
