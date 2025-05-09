@@ -105,9 +105,7 @@ def parser_gen():
         help='Clip ratio for activation quantization. new_max = max * clip_ratio')
     parser.add_argument('--a_auto_asym', action=argparse.BooleanOptionalAction, default=False,
     help='Automatically choose symmetric vs. asymmetric per layer based on skew/mean')
-    # parser.add_argument('--mean_std_thresh', type=float, default=0.5)
-    # parser.add_argument('--skew_thresh', type=float, default=1.0)
-
+ 
 
 
     # Weight Quantization Arguments
