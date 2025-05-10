@@ -126,7 +126,7 @@ def get_pile_books3(nsamples, seed, seqlen, model, hf_token, eval_mode=False):
         tokenizer = transformers.AutoTokenizer.from_pretrained(model, use_fast=False, use_auth_token=hf_token)
 
     if eval_mode:
-        testdata = datasets.load_dataset('EleutherAI/pile', 'all', split='validation')
+        testdata = datasets.load_dataset('EleutherAI/pile', 'pubmed', split='validation')
         testenc = tokenizer(" ".join(testdata['text']), return_tensors='pt')
         return testenc
     else:
