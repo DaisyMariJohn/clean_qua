@@ -105,6 +105,8 @@ def random_orthogonal_matrix(size, device):
     return q
 
 def get_orthogonal_matrix(size, mode, device=utils.DEV):
+    path_to_matrix = "/root/clean_qua/fake_quant/saved_tensors/orthogonal_matrix_epoch_0_T2.0_P2.0_B32.pt"
+    matrix = torch.load(path_to_matrix).to(device=device).to(dtype=torch.float64)
     if mode == 'random':
         return random_orthogonal_matrix(size, device)
     elif mode == 'hadamard':
