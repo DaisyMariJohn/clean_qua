@@ -76,7 +76,7 @@ def parser_gen():
                         help='Model to load;', choices=supported_models)
     parser.add_argument('--seed', type=int, default=0, help='Random Seed for HuggingFace and PyTorch')
     parser.add_argument('--eval_dataset', type=str, default='wikitext2',
-                        help='Dataset for Evaluation (default: wikitext2)', choices=supported_datasets,)
+                        help='Dataset for Evaluation (default: wikitext2)', choices=supported_datasets)
     parser.add_argument('--hf_token', type=str, default=None)
     parser.add_argument('--bsz', type=int, default=32,
                         help='Batch-size for PPL evaluation (default:32)')
